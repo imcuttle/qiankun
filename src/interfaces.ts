@@ -59,7 +59,9 @@ export type PrefetchStrategy =
   | string[]
   | ((apps: AppMetadata[]) => { criticalAppNames: string[]; minorAppsName: string[] });
 
-type QiankunSpecialOpts = {
+export type IsInvokedByMicroApp = (data: { element: HTMLElement; appName: string }) => boolean;
+
+export type QiankunSpecialOpts = {
   /**
    * @deprecated internal api, don't used it as normal, might be removed after next version
    */
@@ -70,6 +72,8 @@ type QiankunSpecialOpts = {
     | {
         strictStyleIsolation?: boolean;
         experimentalStyleIsolation?: boolean;
+        jsType?: 'proxy' | 'legacy' | 'snapshot';
+        isInvokedByMicroApp?: IsInvokedByMicroApp;
         /**
          * @deprecated We use strict mode by default
          */

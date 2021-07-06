@@ -6,6 +6,7 @@
 import { checkActivityFunctions } from 'single-spa';
 import type { Freer } from '../../../interfaces';
 import { patchHTMLDynamicAppendPrototypeFunctions, rebuildCSSRules, recordStyledComponentsCSSRules } from './common';
+import { IsInvokedByMicroApp } from '../../../interfaces';
 
 let bootstrappingPatchCount = 0;
 let mountingPatchCount = 0;
@@ -20,6 +21,7 @@ let mountingPatchCount = 0;
  * @param mounting
  * @param scopedCSS
  * @param excludeAssetFilter
+ * @param isInvokedByMicroApp
  */
 export function patchLooseSandbox(
   appName: string,
@@ -28,9 +30,15 @@ export function patchLooseSandbox(
   mounting = true,
   scopedCSS = false,
   excludeAssetFilter?: CallableFunction,
+  isInvokedByMicroApp?: IsInvokedByMicroApp,
 ): Freer {
   let dynamicStyleSheetElements: Array<HTMLLinkElement | HTMLStyleElement> = [];
-
+  const checker = (element: HTMLElement) => {
+    if (isInvokedByMicroApp) {
+      return isInvokedByMicroApp({ element, appName });
+    }
+    return !!checkActivityFunctions(window.location).some((name) => name === appName);
+  };
   const unpatchDynamicAppendPrototypeFunctions = patchHTMLDynamicAppendPrototypeFunctions(
     /*
       check if the currently specified application is active
@@ -40,7 +48,7 @@ export function patchLooseSandbox(
       and remove them after the url change triggered and qiankun app is unmouting
       see https://github.com/ReactTraining/history/blob/master/modules/createHashHistory.js#L222-L230
      */
-    () => checkActivityFunctions(window.location).some((name) => name === appName),
+    checker,
     () => ({
       appName,
       appWrapperGetter,

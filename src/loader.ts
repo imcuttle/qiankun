@@ -311,7 +311,7 @@ export async function loadApp<T extends ObjectType>(
       // FIXME should use a strict sandbox logic while remount, see https://github.com/umijs/qiankun/issues/518
       initialAppWrapperGetter,
       scopedCSS,
-      useLooseSandbox,
+      sandbox,
       excludeAssetFilter,
     );
     // 用沙箱的代理对象作为接下来使用的全局对象

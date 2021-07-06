@@ -3,7 +3,7 @@
  * @since 2019-04-11
  */
 
-import type { Freer, SandBox } from '../../interfaces';
+import type { Freer, QiankunSpecialOpts, SandBox } from '../../interfaces';
 import { SandBoxType } from '../../interfaces';
 import * as css from './css';
 import { patchLooseSandbox, patchStrictSandbox } from './dynamicAppend';
@@ -17,6 +17,7 @@ export function patchAtMounting(
   sandbox: SandBox,
   scopedCSS: boolean,
   excludeAssetFilter?: CallableFunction,
+  sandboxConfig?: QiankunSpecialOpts['sandbox'],
 ): Freer[] {
   const basePatchers = [
     () => patchInterval(sandbox.proxy),
@@ -27,7 +28,16 @@ export function patchAtMounting(
   const patchersInSandbox = {
     [SandBoxType.LegacyProxy]: [
       ...basePatchers,
-      () => patchLooseSandbox(appName, elementGetter, sandbox.proxy, true, scopedCSS, excludeAssetFilter),
+      () =>
+        patchLooseSandbox(
+          appName,
+          elementGetter,
+          sandbox.proxy,
+          true,
+          scopedCSS,
+          excludeAssetFilter,
+          (typeof sandboxConfig === 'object' && sandboxConfig.isInvokedByMicroApp) || undefined,
+        ),
     ],
     [SandBoxType.Proxy]: [
       ...basePatchers,
@@ -35,7 +45,16 @@ export function patchAtMounting(
     ],
     [SandBoxType.Snapshot]: [
       ...basePatchers,
-      () => patchLooseSandbox(appName, elementGetter, sandbox.proxy, true, scopedCSS, excludeAssetFilter),
+      () =>
+        patchLooseSandbox(
+          appName,
+          elementGetter,
+          sandbox.proxy,
+          true,
+          scopedCSS,
+          excludeAssetFilter,
+          (typeof sandboxConfig === 'object' && sandboxConfig.isInvokedByMicroApp) || undefined,
+        ),
     ],
   };
 
@@ -48,16 +67,35 @@ export function patchAtBootstrapping(
   sandbox: SandBox,
   scopedCSS: boolean,
   excludeAssetFilter?: CallableFunction,
+  sandboxConfig?: QiankunSpecialOpts['sandbox'],
 ): Freer[] {
   const patchersInSandbox = {
     [SandBoxType.LegacyProxy]: [
-      () => patchLooseSandbox(appName, elementGetter, sandbox.proxy, false, scopedCSS, excludeAssetFilter),
+      () =>
+        patchLooseSandbox(
+          appName,
+          elementGetter,
+          sandbox.proxy,
+          false,
+          scopedCSS,
+          excludeAssetFilter,
+          (typeof sandboxConfig === 'object' && sandboxConfig.isInvokedByMicroApp) || undefined,
+        ),
     ],
     [SandBoxType.Proxy]: [
       () => patchStrictSandbox(appName, elementGetter, sandbox.proxy, false, scopedCSS, excludeAssetFilter),
     ],
     [SandBoxType.Snapshot]: [
-      () => patchLooseSandbox(appName, elementGetter, sandbox.proxy, false, scopedCSS, excludeAssetFilter),
+      () =>
+        patchLooseSandbox(
+          appName,
+          elementGetter,
+          sandbox.proxy,
+          false,
+          scopedCSS,
+          excludeAssetFilter,
+          (typeof sandboxConfig === 'object' && sandboxConfig.isInvokedByMicroApp) || undefined,
+        ),
     ],
   };
 

@@ -303,7 +303,9 @@ export default class ProxySandbox implements SandBox {
       },
 
       // trap to support iterator with sandbox
+      // @ts-expect-error
       ownKeys(target: FakeWindow): ArrayLike<string | symbol> {
+        // @ts-expect-error
         return uniq(Reflect.ownKeys(rawWindow).concat(Reflect.ownKeys(target)));
       },
 

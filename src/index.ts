@@ -8,4 +8,5 @@ export { initGlobalState } from './globalState';
 export * from './errorHandler';
 export * from './effects';
 export * from './interfaces';
+export { ERROR_CODE } from './utils';
 export { prefetchImmediately as prefetchApps } from './prefetch';

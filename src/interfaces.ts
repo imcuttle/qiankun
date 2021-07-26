@@ -67,6 +67,7 @@ export type QiankunSpecialOpts = {
    */
   $$cacheLifecycleByAppName?: boolean;
   prefetch?: PrefetchStrategy;
+  onError?: (error: any) => Promise<void>;
   sandbox?:
     | boolean
     | {

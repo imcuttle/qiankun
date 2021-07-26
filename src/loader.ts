@@ -28,6 +28,7 @@ import {
   performanceGetEntriesByName,
   toArray,
   validateExportLifecycle,
+  ERROR_CODE,
 } from './utils';
 
 function assertElementExist(element: Element | null | undefined, msg?: string) {
@@ -239,7 +240,12 @@ function getLifecyclesFromExports(
     return globalVariableExports;
   }
 
-  throw new Error(`[qiankun] You need to export lifecycle functions in ${appName} entry`);
+  const error = new Error(`[qiankun] You need to export lifecycle functions in ${appName} entry`) as any;
+  error.code = ERROR_CODE.ENTRY_LIFECYCLES_INVALID;
+  error.data = {
+    appName,
+  };
+  throw error;
 }
 
 let prevAppUnmountedDeferred: Deferred<void>;
@@ -259,7 +265,7 @@ export async function loadApp<T extends ObjectType>(
     performanceMark(markName);
   }
 
-  const { singular = false, sandbox = true, excludeAssetFilter, ...importEntryOpts } = configuration;
+  const { singular = false, sandbox = true, excludeAssetFilter, onError, ...importEntryOpts } = configuration;
 
   // get the entry html content and script executor
   const { template, execScripts, assetPublicPath } = await importEntry(entry, importEntryOpts);
@@ -320,27 +326,36 @@ export async function loadApp<T extends ObjectType>(
     unmountSandbox = sandboxContainer.unmount;
   }
 
-  const {
-    beforeUnmount = [],
-    afterUnmount = [],
-    afterMount = [],
-    beforeMount = [],
-    beforeLoad = [],
-  } = mergeWith({}, getAddOns(global, assetPublicPath), lifeCycles, (v1, v2) => concat(v1 ?? [], v2 ?? []));
+  const { beforeUnmount = [], afterUnmount = [], afterMount = [], beforeMount = [], beforeLoad = [] } = mergeWith(
+    {},
+    getAddOns(global, assetPublicPath),
+    lifeCycles,
+    (v1, v2) => concat(v1 ?? [], v2 ?? []),
+  );
 
   await execHooksChain(toArray(beforeLoad), app, global);
 
   // get the lifecycle hooks from module exports
-  const scriptExports: any = await execScripts(global, sandbox && !useLooseSandbox);
-  const { bootstrap, mount, unmount, update } = getLifecyclesFromExports(
-    scriptExports,
-    appName,
-    global,
-    sandboxContainer?.instance?.latestSetProp,
-  );
+  let lifeCyclesObj: any;
+  let lifeCyclesError: any;
+  try {
+    const scriptExports: any = await execScripts(global, sandbox && !useLooseSandbox);
+    lifeCyclesObj = getLifecyclesFromExports(scriptExports, appName, global, sandboxContainer?.instance?.latestSetProp);
+  } catch (e) {
+    lifeCyclesError = e;
+  }
+  const { bootstrap, mount, unmount, update } = {
+    bootstrap: async () => {},
+    mount: async () => {},
+    unmount: async () => {},
+    ...lifeCyclesObj,
+  } as any;
 
-  const { onGlobalStateChange, setGlobalState, offGlobalStateChange }: Record<string, CallableFunction> =
-    getMicroAppStateActions(appInstanceId);
+  const {
+    onGlobalStateChange,
+    setGlobalState,
+    offGlobalStateChange,
+  }: Record<string, CallableFunction> = getMicroAppStateActions(appInstanceId);
 
   // FIXME temporary way
   const syncAppWrapperElement2Sandbox = (element: HTMLElement | null) => (initialAppWrapperElement = element);
@@ -358,7 +373,7 @@ export async function loadApp<T extends ObjectType>(
 
     const parcelConfig: ParcelConfigObject = {
       name: appInstanceId,
-      bootstrap,
+      bootstrap: [bootstrap].filter(Boolean),
       mount: [
         async () => {
           if (process.env.NODE_ENV === 'development') {
@@ -405,6 +420,11 @@ export async function loadApp<T extends ObjectType>(
           if (process.env.NODE_ENV === 'development') {
             const measureName = `[qiankun] App ${appInstanceId} Loading Consuming`;
             performanceMeasure(measureName, markName);
+          }
+        },
+        async () => {
+          if (lifeCyclesError && onError) {
+            await onError(lifeCyclesError);
           }
         },
       ],

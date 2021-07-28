@@ -60,7 +60,14 @@ export function createSandboxContainer(
   }
 
   // some side effect could be be invoked while bootstrapping, such as dynamic stylesheet injection with style-loader, especially during the development phase
-  const bootstrappingFreers = patchAtBootstrapping(appName, elementGetter, sandbox, scopedCSS, excludeAssetFilter, sandboxConfig);
+  const bootstrappingFreers = patchAtBootstrapping(
+    appName,
+    elementGetter,
+    sandbox,
+    scopedCSS,
+    excludeAssetFilter,
+    sandboxConfig,
+  );
   // mounting freers are one-off and should be re-init at every mounting time
   let mountingFreers: Freer[] = [];
 
@@ -108,9 +115,13 @@ export function createSandboxContainer(
     async unmount() {
       // record the rebuilders of window side effects (event listeners or timers)
       // note that the frees of mounting phase are one-off as it will be re-init at next mounting
-      sideEffectsRebuilders = [...bootstrappingFreers, ...mountingFreers].map((free) => free());
+      sideEffectsRebuilders = this.freeBootstrap().concat([...mountingFreers].map((free) => free()));
 
       sandbox.inactive();
+    },
+
+    freeBootstrap() {
+      return bootstrappingFreers.map((free) => free());
     },
   };
 }

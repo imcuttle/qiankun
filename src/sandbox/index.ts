@@ -73,7 +73,7 @@ export function createSandboxContainer(
 
   let sideEffectsRebuilders: Rebuilder[] = [];
 
-  return {
+  const ctx = {
     instance: sandbox,
 
     /**
@@ -115,7 +115,7 @@ export function createSandboxContainer(
     async unmount() {
       // record the rebuilders of window side effects (event listeners or timers)
       // note that the frees of mounting phase are one-off as it will be re-init at next mounting
-      sideEffectsRebuilders = this.freeBootstrap().concat([...mountingFreers].map((free) => free()));
+      sideEffectsRebuilders = ctx.freeBootstrap().concat([...mountingFreers].map((free) => free()));
 
       sandbox.inactive();
     },
@@ -124,4 +124,6 @@ export function createSandboxContainer(
       return bootstrappingFreers.map((free) => free());
     },
   };
+
+  return ctx;
 }

@@ -7,6 +7,7 @@ import type { ParcelConfigObjectGetter } from './loader';
 import { loadApp } from './loader';
 import { doPrefetchStrategy } from './prefetch';
 import { Deferred, getContainer, getXPathForElement, toArray } from './utils';
+import testCaseReportHandler from 'jest-circus/build/testCaseReportHandler';
 
 let microApps: Array<RegistrableApp<Record<string, unknown>>> = [];
 
@@ -103,16 +104,26 @@ export function loadMicroApp<T extends ObjectType>(
 
     const parcelConfigObjectGetterPromise = loadApp(app, userConfiguration, lifeCycles);
 
+    const unset: any[] = [];
     if (container) {
       if ($$cacheLifecycleByAppName) {
         appConfigPromiseGetterMap.set(name, parcelConfigObjectGetterPromise);
+        unset.push(() => appConfigPromiseGetterMap.delete(name));
       } else {
         const xpath = getContainerXpath(container);
-        if (xpath) appConfigPromiseGetterMap.set(`${name}-${xpath}`, parcelConfigObjectGetterPromise);
+        if (xpath) {
+          appConfigPromiseGetterMap.set(`${name}-${xpath}`, parcelConfigObjectGetterPromise);
+          unset.push(() => appConfigPromiseGetterMap.delete(`${name}-${xpath}`));
+        }
       }
     }
 
-    return (await parcelConfigObjectGetterPromise)(container);
+    try {
+      return (await parcelConfigObjectGetterPromise)(container);
+    } catch (err) {
+      unset.forEach((cb) => cb());
+      throw err;
+    }
   };
 
   if (!started) {

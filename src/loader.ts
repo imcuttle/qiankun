@@ -7,6 +7,7 @@ import { importEntry } from 'import-html-entry';
 import { concat, forEach, mergeWith } from 'lodash';
 import type { LifeCycles, ParcelConfigObject } from 'single-spa';
 import getAddOns from './addons';
+import { QiankunError } from './error';
 import { getMicroAppStateActions } from './globalState';
 import type {
   FrameworkConfiguration,
@@ -34,10 +35,10 @@ import {
 function assertElementExist(element: Element | null | undefined, msg?: string) {
   if (!element) {
     if (msg) {
-      throw new Error(msg);
+      throw new QiankunError(msg);
     }
 
-    throw new Error('[qiankun] element not existed!');
+    throw new QiankunError('element not existed!');
   }
 }
 
@@ -119,22 +120,16 @@ function getAppWrapperGetter(
 ) {
   return () => {
     if (useLegacyRender) {
-      if (strictStyleIsolation) throw new Error('[qiankun]: strictStyleIsolation can not be used with legacy render!');
-      if (scopedCSS) throw new Error('[qiankun]: experimentalStyleIsolation can not be used with legacy render!');
+      if (strictStyleIsolation) throw new QiankunError('strictStyleIsolation can not be used with legacy render!');
+      if (scopedCSS) throw new QiankunError('experimentalStyleIsolation can not be used with legacy render!');
 
       const appWrapper = document.getElementById(getWrapperId(appInstanceId));
-      assertElementExist(
-        appWrapper,
-        `[qiankun] Wrapper element for ${appName} with instance ${appInstanceId} is not existed!`,
-      );
+      assertElementExist(appWrapper, `Wrapper element for ${appName} with instance ${appInstanceId} is not existed!`);
       return appWrapper!;
     }
 
     const element = elementGetter();
-    assertElementExist(
-      element,
-      `[qiankun] Wrapper element for ${appName} with instance ${appInstanceId} is not existed!`,
-    );
+    assertElementExist(element, `Wrapper element for ${appName} with instance ${appInstanceId} is not existed!`);
 
     if (strictStyleIsolation && supportShadowDOM) {
       return element!.shadowRoot!;
@@ -179,13 +174,13 @@ function getRender(appName: string, appContent: string, legacyRender?: HTMLConte
         switch (phase) {
           case 'loading':
           case 'mounting':
-            return `[qiankun] Target container with ${container} not existed while ${appName} ${phase}!`;
+            return `Target container with ${container} not existed while ${appName} ${phase}!`;
 
           case 'mounted':
-            return `[qiankun] Target container with ${container} not existed after ${appName} ${phase}!`;
+            return `Target container with ${container} not existed after ${appName} ${phase}!`;
 
           default:
-            return `[qiankun] Target container with ${container} not existed while ${appName} rendering!`;
+            return `Target container with ${container} not existed while ${appName} rendering!`;
         }
       })();
       assertElementExist(containerElement, errorMsg);
@@ -240,7 +235,7 @@ function getLifecyclesFromExports(
     return globalVariableExports;
   }
 
-  const error = new Error(`[qiankun] You need to export lifecycle functions in ${appName} entry`) as any;
+  const error = new QiankunError(`You need to export lifecycle functions in ${appName} entry`) as any;
   error.code = ERROR_CODE.ENTRY_LIFECYCLES_INVALID;
   error.data = {
     appName,

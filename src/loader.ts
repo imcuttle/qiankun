@@ -321,12 +321,14 @@ export async function loadApp<T extends ObjectType>(
     unmountSandbox = sandboxContainer.unmount;
   }
 
-  const { beforeUnmount = [], afterUnmount = [], afterMount = [], beforeMount = [], beforeLoad = [] } = mergeWith(
-    {},
-    getAddOns(global, assetPublicPath),
-    lifeCycles,
-    (v1, v2) => concat(v1 ?? [], v2 ?? []),
-  );
+  const {
+    beforeUnmount = [],
+    afterUnmount = [],
+    afterMount = [],
+    beforeMount = [],
+    beforeLoad = [],
+    afterError = [],
+  } = mergeWith({}, getAddOns(global, assetPublicPath), lifeCycles, (v1, v2) => concat(v1 ?? [], v2 ?? []));
 
   await execHooksChain(toArray(beforeLoad), app, global);
 
@@ -443,6 +445,7 @@ export async function loadApp<T extends ObjectType>(
     if (err.code === ERROR_CODE.ENTRY_LIFECYCLES_INVALID) {
       sandboxContainer?.freeBootstrap();
     }
+    await execHooksChain(toArray(afterError), app, global);
     throw err;
   }
 }

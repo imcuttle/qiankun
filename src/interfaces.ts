@@ -99,6 +99,7 @@ export type FrameworkLifeCycles<T extends ObjectType> = {
   afterMount?: LifeCycleFn<T> | Array<LifeCycleFn<T>>; // function after app mount
   beforeUnmount?: LifeCycleFn<T> | Array<LifeCycleFn<T>>; // function before app unmount
   afterUnmount?: LifeCycleFn<T> | Array<LifeCycleFn<T>>; // function after app unmount
+  afterError?: LifeCycleFn<T> | Array<LifeCycleFn<T>>; // function after app unmount
 };
 
 export type MicroApp = Parcel;

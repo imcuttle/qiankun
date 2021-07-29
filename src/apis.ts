@@ -7,7 +7,6 @@ import type { ParcelConfigObjectGetter } from './loader';
 import { loadApp } from './loader';
 import { doPrefetchStrategy } from './prefetch';
 import { Deferred, getContainer, getXPathForElement, toArray } from './utils';
-import testCaseReportHandler from 'jest-circus/build/testCaseReportHandler';
 
 let microApps: Array<RegistrableApp<Record<string, unknown>>> = [];
 

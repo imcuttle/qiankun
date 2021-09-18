@@ -244,6 +244,7 @@ function getLifecyclesFromExports(
 }
 
 let prevAppUnmountedDeferred: Deferred<void>;
+let globalSandboxContainer: any;
 
 export type ParcelConfigObjectGetter = (remountContainer?: string | HTMLElement) => ParcelConfigObject;
 
@@ -269,7 +270,9 @@ export async function loadApp<T extends ObjectType>(
   // (see https://github.com/CanopyTax/single-spa/blob/master/src/navigation/reroute.js#L74)
   // we need wait to load the app until all apps are finishing unmount in singular mode
   if (await validateSingularMode(singular, app)) {
+    await globalSandboxContainer?.unmount();
     await (prevAppUnmountedDeferred && prevAppUnmountedDeferred.promise);
+    globalSandboxContainer = null;
   }
 
   const appContent = getDefaultTplWrapper(appInstanceId, appName)(template);
@@ -319,6 +322,9 @@ export async function loadApp<T extends ObjectType>(
     global = sandboxContainer.instance.proxy as typeof window;
     mountSandbox = sandboxContainer.mount;
     unmountSandbox = sandboxContainer.unmount;
+  }
+  if (await validateSingularMode(singular, app)) {
+    globalSandboxContainer = sandboxContainer;
   }
 
   const {
